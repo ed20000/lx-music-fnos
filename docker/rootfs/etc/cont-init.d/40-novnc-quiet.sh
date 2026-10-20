@@ -1,19 +1,20 @@
 #!/bin/sh
-# 让 noVNC 连接时不自动展开左侧控制栏。
+# noVNC 前端补丁，通过注入 index.html 的 <head> 完成。
 #
-# noVNC 连接成功后读 setting first_run：不等于 'false' 就展开控制栏、
-# 2 秒后自动收起，并把 first_run 写成 'false'。只要在页面脚本执行前
-# 预置这个键，面板就一直保持收起，只留一个可点开的细把手。
+# 1. 预置 first_run=false：跳过控制栏首次自动展开，界面打开就是干净的。
 #
-# 做法是往 index.html 的 </head> 前注入一段小脚本，而不是修改上游的
-# ui.js —— 上游文件会随基础镜像整体替换，注入点更稳定。
-# 用 awk 而非 python，避免依赖基础镜像里未必存在的解释器。
-# 脚本幂等：重复执行不会重复注入。
+# 2. 解锁 AudioContext。浏览器只允许音频上下文在用户手势之后运行，而
+#    pcm-player 在页面加载时就创建了它，此时必然 suspended；jlesage 自带的
+#    unmute 没能救回来（实测仍然报 "not allowed to start"）。
+#    这里包一层构造函数把所有实例记下来，首次交互后统一 resume。
+#
+# 注入点必须在 app/ui.js 之前。ui.js 是 type="module"（延迟执行），
+# 内联脚本同步执行，放在 </head> 前即可保证顺序。
 
 set -eu
 
 INDEX=/opt/noVNC/index.html
-MARKER='novnc-quiet-init'
+MARKER='novnc-tuning'
 
 [ -f "${INDEX}" ] || exit 0
 grep -q "${MARKER}" "${INDEX}" && exit 0
@@ -22,11 +23,34 @@ TMP="${INDEX}.tmp"
 awk -v marker="${MARKER}" '
     /<\/head>/ && !done {
         print "    <script id=\"" marker "\">"
-        print "      // 预置 first_run=false：noVNC 据此跳过首次自动展开控制栏。"
         print "      try {"
-        print "        var _k = \"first_run\";"
-        print "        if (localStorage.getItem(_k) === null) localStorage.setItem(_k, \"false\");"
+        print "        if (localStorage.getItem(\"first_run\") === null) localStorage.setItem(\"first_run\", \"false\");"
         print "      } catch (e) {}"
+        print "      (function () {"
+        print "        var NativeAC = window.AudioContext || window.webkitAudioContext;"
+        print "        if (!NativeAC) return;"
+        print "        var instances = [];"
+        print "        function TrackedAC(opts) {"
+        print "          var ctx = new NativeAC(opts);"
+        print "          instances.push(ctx);"
+        print "          return ctx;"
+        print "        }"
+        print "        TrackedAC.prototype = NativeAC.prototype;"
+        print "        window.AudioContext = TrackedAC;"
+        print "        if (window.webkitAudioContext) window.webkitAudioContext = TrackedAC;"
+        print "        var armed = false;"
+        print "        function arm() { armed = true; }"
+        print "        [\"click\", \"mousedown\", \"keydown\", \"touchstart\", \"pointerdown\"].forEach(function (ev) {"
+        print "          window.addEventListener(ev, arm, true);"
+        print "        });"
+        print "        function unlockAll() {"
+        print "          for (var i = 0; i < instances.length; i++) {"
+        print "            var c = instances[i];"
+        print "            if (c && c.state === \"suspended\") { try { c.resume(); } catch (e) {} }"
+        print "          }"
+        print "        }"
+        print "        setInterval(function () { if (armed) unlockAll(); }, 400);"
+        print "      })();"
         print "    </script>"
         done = 1
     }
@@ -34,4 +58,4 @@ awk -v marker="${MARKER}" '
 ' "${INDEX}" > "${TMP}"
 
 mv "${TMP}" "${INDEX}"
-echo "novnc-quiet-init: injected"
+echo "novnc-tuning: injected"
