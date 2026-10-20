@@ -53,7 +53,8 @@ RUN add-pkg \
         fonts-wqy-zenhei \
         hicolor-icon-theme \
         curl \
-        ca-certificates
+        ca-certificates \
+        pulseaudio-utils
 
 # 下载并解包官方 deb。ARM 机型构建时传 --build-arg LX_ARCH=arm64。
 #

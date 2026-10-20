@@ -50,6 +50,31 @@ if [ ! -f "${SEED_MARKER}" ]; then
     : > "${SEED_MARKER}"
 fi
 
+# 确保 PulseAudio 有可用的默认输出设备。
+# 基础镜像用 module-null-sink 起服务但没指定名字，某些版本下应用找不到
+# 默认设备，表现为"在播放但没声音"。这里显式建一个并设默认。
+# startapp.sh 由 app 服务调用，此时 pulseaudio 服务已启动（依赖顺序保证）。
+setup_audio_sink() {
+    command -v pactl >/dev/null 2>&1 || return 0
+
+    export PULSE_SERVER="${PULSE_SERVER:-unix:/tmp/pulseaudio.sock}"
+
+    i=0
+    while [ ! -S /tmp/pulseaudio.sock ] && [ "$i" -lt 20 ]; do
+        i=$((i + 1)); sleep 0.5
+    done
+    [ -S /tmp/pulseaudio.sock ] || return 0
+
+    if pactl list short sinks 2>/dev/null | grep -q lxmusic_sink; then
+        pactl set-default-sink lxmusic_sink >/dev/null 2>&1 || true
+        return 0
+    fi
+    pactl load-module module-null-sink sink_name=lxmusic_sink \
+        sink_properties="device.description=LX Music Audio" >/dev/null 2>&1 || true
+    pactl set-default-sink lxmusic_sink >/dev/null 2>&1 || true
+}
+setup_audio_sink
+
 # --no-sandbox               容器内没有可用沙箱环境，否则 Electron 直接退出。
 # --dt                       关闭透明窗口：VNC 后端不做 ARGB 合成，透明窗口会变黑块。
 # --dha                      让 LX Music 自己调用 disableHardwareAcceleration()。
