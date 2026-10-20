@@ -32,13 +32,19 @@ if [ ! -f "${CONFIG_FILE}" ]; then
 EOF
 fi
 
-# --no-sandbox              容器内没有可用沙箱环境，否则 Electron 直接退出。
-# --dt                      关闭透明窗口：VNC 后端不做 ARGB 合成，透明窗口会变黑块。
-# --disable-gpu             无 GPU 的 NAS 上软件渲染更稳定。
-# --disable-dev-shm-usage   容器 /dev/shm 偏小时避免渲染进程崩溃。
+# --no-sandbox               容器内没有可用沙箱环境，否则 Electron 直接退出。
+# --dt                       关闭透明窗口：VNC 后端不做 ARGB 合成，透明窗口会变黑块。
+# --dha                      让 LX Music 自己调用 disableHardwareAcceleration()。
+#                            它在 Linux 上会硬编码 --use-gl=desktop，容器里没有
+#                            桌面 GL 实现，Chromium 初始化失败会以 SIGTRAP 退出。
+# --disable-gpu              只留软件渲染路径，避免再去碰 GL。
+# --disable-dev-shm-usage    容器 /dev/shm 偏小时避免渲染进程崩溃。
+# --disable-gpu-sandbox      双保险：GPU 进程也不启用沙箱。
 exec "${APP_BIN}" \
     --no-sandbox \
     --dt \
+    --dha \
     --disable-gpu \
+    --disable-gpu-sandbox \
     --disable-dev-shm-usage \
     "$@"

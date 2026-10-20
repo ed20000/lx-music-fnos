@@ -46,6 +46,10 @@ RUN add-pkg \
         libcups2 \
         libasound2 \
         libudev1 \
+        libgl1 \
+        libglx-mesa0 \
+        libegl1 \
+        libegl-mesa0 \
         fonts-wqy-zenhei \
         hicolor-icon-theme \
         curl \
