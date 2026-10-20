@@ -13,6 +13,8 @@ ARG LX_VERSION=2.12.6
 ARG LX_ARCH=amd64
 
 # Electron 运行时依赖，取自 deb 包 control 文件；另外补中文字体与图标主题。
+# curl 用于拉取 deb，ca-certificates 是 TLS 校验的前提：本镜像在构建阶段
+# 证书目录是空的（运行时才由 /etc/cont-init.d/10-certs.sh 生成），必须自己补。
 RUN add-pkg \
         libgtk-3-0 \
         libnotify4 \
@@ -26,7 +28,8 @@ RUN add-pkg \
         xdg-utils \
         fonts-wqy-zenhei \
         hicolor-icon-theme \
-        curl
+        curl \
+        ca-certificates
 
 # 下载并解包官方 deb。ARM 机型构建时传 --build-arg LX_ARCH=arm64。
 RUN set -eux; \
