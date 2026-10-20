@@ -1,0 +1,4 @@
+*.fpk
+fpk/app/docker/docker-compose.yaml.orig
+.DS_Store
+dist/

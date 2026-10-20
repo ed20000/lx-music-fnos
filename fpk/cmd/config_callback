@@ -1,0 +1,34 @@
+#!/bin/bash
+# 应用设置保存后：同步更新 VNC 口令。
+# 留空表示保持原口令，不清空——否则用户只改下载目录就会把密码弄丢。
+
+set -u
+
+PKGVAR="${TRIM_PKGVAR:?缺少 TRIM_PKGVAR}"
+CONFIG_DIR="${PKGVAR}/config"
+PASSWORD="${wizard_vnc_password:-}"
+
+[ -z "${PASSWORD}" ] && exit 0
+
+mkdir -p "${CONFIG_DIR}"
+
+sanitize_password() {
+    local raw="$1" safe="" i ch
+    raw="${raw//[[:space:]]/}"
+    for (( i=0; i<${#raw} && i<8; i++ )); do
+        ch="${raw:$i:1}"
+        case "${ch}" in
+            [\$\"\'\`\#\\]) ;;
+            *) safe="${safe}${ch}" ;;
+        esac
+    done
+    printf '%s' "${safe}"
+}
+
+CLEAN="$(sanitize_password "${PASSWORD}")"
+if [ -n "${CLEAN}" ]; then
+    printf '%s' "${CLEAN}" > "${CONFIG_DIR}/.vncpass_clear"
+    chmod 600 "${CONFIG_DIR}/.vncpass_clear"
+fi
+
+exit 0

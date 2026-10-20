@@ -1,0 +1,10 @@
+#!/bin/bash
+# 卸载后：口令属于敏感数据，跟随应用一起删除。
+# 音乐下载目录是用户数据，位于共享目录中，不在此清理。
+
+set -u
+
+CONFIG_DIR="${TRIM_PKGVAR:-}/config"
+[ -n "${TRIM_PKGVAR:-}" ] && rm -f "${CONFIG_DIR}/.vncpass_clear" 2>/dev/null
+
+exit 0

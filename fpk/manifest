@@ -1,0 +1,17 @@
+appname               = lxmusic
+version               = 1.0.0
+display_name          = LX Music
+desc                  = 洛雪音乐桌面版（lx-music-desktop）的飞牛 NAS 版本。通过浏览器直接使用：多平台音乐搜索、歌单管理、歌词显示，声音经 Web Audio 回传到浏览器播放。内置 X 桌面环境，无需显示器。
+source                = thirdparty
+platform              = x86
+os_min_version        = 1.2.0
+maintainer            = lxmusic-fnos
+maintainer_url        = https://github.com/lyswhut/lx-music-desktop
+distributor           = lxmusic-fnos
+distributor_url       = https://github.com/lyswhut/lx-music-desktop
+changelog             = 1.0.0: 首个版本，基于 lx-music-desktop 2.12.6 与 jlesage/baseimage-gui。
+service_port          = 5802
+checkport             = true
+desktop_uidir         = ui
+desktop_applaunchname = lxmusic.main
+ctl_stop              = true

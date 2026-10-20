@@ -1,0 +1,31 @@
+#!/bin/bash
+# fnOS 生命周期脚本：容器启停由应用中心通过 docker-project 驱动，
+# 这里只负责上报运行状态，以及把向导里的 VNC 口令落到容器配置目录。
+
+COMPOSE_FILE="${TRIM_APPDEST}/docker/docker-compose.yaml"
+CONTAINER_NAME="lxmusic"
+
+container_status() {
+    local status
+    status=$(docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null) || return 1
+    [ "${status}" = "running" ]
+}
+
+case "$1" in
+    start)
+        # 容器由应用中心启动，无需额外动作
+        exit 0
+        ;;
+    stop)
+        exit 0
+        ;;
+    status)
+        if container_status; then
+            exit 0
+        fi
+        exit 3
+        ;;
+    *)
+        exit 1
+        ;;
+esac

@@ -1,0 +1,45 @@
+#!/bin/bash
+# 安装后：把向导设置写成容器能读到的文件。
+#
+# 为什么写文件而不是环境变量：fnOS 通过 Docker API 解析 docker-compose.yaml，
+# 不认 env_file，向导值只在 compose 的变量插值里生效。VNC 口令是密钥，
+# 不适合放进 compose 明文；jlesage 镜像原生支持 /config/.vncpass_clear，
+# 容器启动时读它并转成混淆后的口令文件。
+
+set -u
+
+PKGVAR="${TRIM_PKGVAR:?缺少 TRIM_PKGVAR}"
+CONFIG_DIR="${PKGVAR}/config"
+PASSWORD="${wizard_vnc_password:-}"
+
+mkdir -p "${CONFIG_DIR}"
+
+# VNC 口令限制：最长 8 位、只接受可打印 ASCII。
+# 表单向导只做基本校验，用户也可能绕过表单，所以这里再校验一次。
+sanitize_password() {
+    local raw="$1" safe="" i ch
+    raw="${raw//[[:space:]]/}"
+    for (( i=0; i<${#raw} && i<8; i++ )); do
+        ch="${raw:$i:1}"
+        case "${ch}" in
+            [\$\"\'\`\#\\]) ;;
+            *) safe="${safe}${ch}" ;;
+        esac
+    done
+    printf '%s' "${safe}"
+}
+
+if [ -n "${PASSWORD}" ]; then
+    CLEAN="$(sanitize_password "${PASSWORD}")"
+    if [ -z "${CLEAN}" ]; then
+        echo "密码只包含不支持的字符，已跳过设置密码" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+        rm -f "${CONFIG_DIR}/.vncpass_clear"
+    else
+        printf '%s' "${CLEAN}" > "${CONFIG_DIR}/.vncpass_clear"
+        chmod 600 "${CONFIG_DIR}/.vncpass_clear"
+    fi
+else
+    rm -f "${CONFIG_DIR}/.vncpass_clear"
+fi
+
+exit 0

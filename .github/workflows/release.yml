@@ -1,0 +1,105 @@
+name: Build and release FPK
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      lx_version:
+        description: 'lx-music-desktop 版本（不含 v 前缀）'
+        required: true
+        default: '2.12.6'
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  LX_VERSION: ${{ github.event.inputs.lx_version || '2.12.6' }}
+  FNPACK_VERSION: '1.2.3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            deb_arch: amd64
+            platform: linux/amd64
+          - arch: arm
+            deb_arch: arm64
+            platform: linux/arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            LX_VERSION=${{ env.LX_VERSION }}
+            LX_ARCH=${{ matrix.deb_arch }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ env.LX_VERSION }}-${{ matrix.arch }}
+            ghcr.io/${{ github.repository }}:latest-${{ matrix.arch }}
+
+      - name: Install fnpack
+        run: |
+          curl -fsSL -o fnpack \
+            "https://static2.fnnas.com/fnpack/fnpack-${FNPACK_VERSION}-linux-amd64"
+          chmod +x fnpack
+          sudo mv fnpack /usr/local/bin/fnpack
+
+      - name: Build fpk
+        run: |
+          IMAGE="$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          bash scripts/build-fpk.sh \
+            --image "${IMAGE}" \
+            --version "${LX_VERSION}" \
+            --arch "${{ matrix.arch }}" \
+            --tag "${LX_VERSION}-${{ matrix.arch }}" \
+            --fnpack fnpack
+
+      # 脚本已按 <appname>_<version>_<arch>.fpk 命名并输出到 dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fpk-${{ matrix.arch }}
+          path: dist/*.fpk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum *.fpk > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.fpk
+            dist/SHA256SUMS.txt

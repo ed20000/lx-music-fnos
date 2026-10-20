@@ -1,0 +1,40 @@
+[
+  {
+    "stepTitle": "LX Music 设置",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "LX Music 通过浏览器（noVNC）远程访问。<b>未设置密码时，任何能访问该端口的人都能操作你的音乐库。</b>建议在下方设置访问密码。"
+      },
+      {
+        "type": "tips",
+        "helpText": "<b>关于密码：</b><br>1. 密码同时用于网页访问和 VNC 客户端连接<br>2. <b>最多 8 位有效</b>（VNC 协议限制，超出部分会被截断）<br>3. 只支持英文、数字和常见符号，不支持中文<br>4. 留空则不启用密码，仅建议在完全隔离的内网使用"
+      },
+      {
+        "type": "password",
+        "field": "wizard_vnc_password",
+        "label": "访问密码（留空则不启用）"
+      },
+      {
+        "type": "text",
+        "field": "wizard_download_dir",
+        "label": "音乐下载目录",
+        "initValue": "/var/apps/lxmusic/shares/LXMusic",
+        "rules": [
+          {
+            "required": true,
+            "message": "请填写下载目录"
+          },
+          {
+            "pattern": "^/",
+            "message": "请填写绝对路径，例如 /vol1/1000/Music"
+          }
+        ]
+      },
+      {
+        "type": "tips",
+        "helpText": "默认使用应用共享目录，可在飞牛文件管理器中直接查看。如需下载到已有音乐库，改成对应路径即可（例如 /vol1/1000/Music）。"
+      }
+    ]
+  }
+]

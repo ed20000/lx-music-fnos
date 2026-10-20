@@ -1,0 +1,32 @@
+[
+  {
+    "stepTitle": "LX Music 设置",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "修改访问密码后需要<b>重启应用</b>才会生效。密码最多 8 位，只支持英文、数字和常见符号。"
+      },
+      {
+        "type": "password",
+        "field": "wizard_vnc_password",
+        "label": "访问密码（留空则保持原密码）"
+      },
+      {
+        "type": "text",
+        "field": "wizard_download_dir",
+        "label": "音乐下载目录",
+        "initValue": "/var/apps/lxmusic/shares/LXMusic",
+        "rules": [
+          {
+            "required": true,
+            "message": "请填写下载目录"
+          },
+          {
+            "pattern": "^/",
+            "message": "请填写绝对路径，例如 /vol1/1000/Music"
+          }
+        ]
+      }
+    ]
+  }
+]

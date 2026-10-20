@@ -1,0 +1,32 @@
+# fnOS 通过 Docker API 解析本文件做变量插值（不走 docker compose CLI），
+# 因此只有 TRIM_* 系统变量和向导变量可用：env_file 不生效，${VERSION} 这类
+# 自定义占位符也不会被替换。镜像地址与版本由 scripts/build-fpk.sh 在打包时写死。
+services:
+  lxmusic:
+    image: lxmusic-placeholder.invalid/lxmusic:0
+    container_name: lxmusic
+    ports:
+      - "${TRIM_SERVICE_PORT}:5800"
+    volumes:
+      # LX Music 的 userData、VNC 口令、noVNC 会话
+      - ${TRIM_PKGVAR:?}/config:/config
+      # 音乐下载目录，映射到 config/resource 声明的共享目录
+      - ${wizard_download_dir:-/var/apps/lxmusic/shares/LXMusic}:/downloads
+    environment:
+      - TZ=Asia/Shanghai
+      - USER_ID=${TRIM_UID}
+      - GROUP_ID=${TRIM_GID}
+      - LX_DOWNLOAD_DIR=/downloads
+      # 画面尺寸。LX Music 主窗口固定宽高，画布留大一些便于完整显示。
+      - DISPLAY_WIDTH=${wizard_display_width:-1220}
+      - DISPLAY_HEIGHT=${wizard_display_height:-780}
+      # 声音经容器内 PulseAudio 回传，由浏览器播放
+      - WEB_AUDIO=1
+      - WEB_FILE_MANAGER=0
+      - WEB_TERMINAL=0
+      - KEEP_APP_RUNNING=1
+      - DARK_MODE=0
+      - ENABLE_CJK_FONT=1
+      - PACKAGES_MIRROR=https://mirrors.aliyun.com/debian
+    shm_size: "1gb"
+    restart: unless-stopped

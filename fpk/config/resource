@@ -1,0 +1,22 @@
+{
+    "data-share": {
+        "shares": [
+            {
+                "name": "LXMusic",
+                "permission": {
+                    "rw": [
+                        "lxmusic"
+                    ]
+                }
+            }
+        ]
+    },
+    "docker-project": {
+        "projects": [
+            {
+                "name": "lxmusic",
+                "path": "docker"
+            }
+        ]
+    }
+}
