@@ -17,10 +17,11 @@ services:
       - USER_ID=${TRIM_UID}
       - GROUP_ID=${TRIM_GID}
       - LX_DOWNLOAD_DIR=/downloads
-      # 画布尺寸与 LX Music 默认窗口（1114x718，windowSizeId=3）严格一致，
-      # 配合 noVNC 的 resize=scale 等比缩放，避免出现黑边或裁切。
-      - DISPLAY_WIDTH=${wizard_display_width:-1114}
-      - DISPLAY_HEIGHT=${wizard_display_height:-718}
+      # 画布尺寸。LX Music 启动时会读 common.windowSizeId 决定窗口大小，
+      # 这里用 id=5（1385x896），窗口铺满画布且留出边距，避免被 Lx
+      # 的"窗口超出屏幕就降级到 920x600"逻辑打回。
+      - DISPLAY_WIDTH=${wizard_display_width:-1600}
+      - DISPLAY_HEIGHT=${wizard_display_height:-900}
       # 声音经容器内 PulseAudio 回传，由浏览器播放
       - WEB_AUDIO=1
       - WEB_FILE_MANAGER=0

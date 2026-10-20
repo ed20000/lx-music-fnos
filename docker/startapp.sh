@@ -16,9 +16,12 @@ APP_BIN=/opt/lx-music-desktop/lx-music-desktop
 CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME:-/config}/.config}"
 CONFIG_FILE="${CONFIG_HOME}/lx-music-desktop/LxDatas/config_v2.json"
 DOWNLOAD_DIR="${LX_DOWNLOAD_DIR:-/downloads}"
+# 窗口大小档位：5 = oversized(1385x896)，配 1600x900 画布留出边距。
+WINDOW_SIZE_ID="${LX_WINDOW_SIZE_ID:-5}"
+
+mkdir -p "$(dirname "${CONFIG_FILE}")"
 
 if [ ! -f "${CONFIG_FILE}" ]; then
-    mkdir -p "$(dirname "${CONFIG_FILE}")"
     cat > "${CONFIG_FILE}" <<EOF
 {
 	"setting": {
@@ -26,10 +29,25 @@ if [ ! -f "${CONFIG_FILE}" ]; then
 		"download.enable": true,
 		"download.savePath": "${DOWNLOAD_DIR}",
 		"tray.enable": false,
-		"desktopLyric.enable": false
+		"desktopLyric.enable": false,
+		"common.windowSizeId": ${WINDOW_SIZE_ID}
 	}
 }
 EOF
+fi
+
+# 已有配置：只补一次窗口档位，之后以用户在界面里的选择为准。
+# 单独用一个标记文件记录，避免每次启动都把用户改过的值覆盖掉。
+SEED_MARKER="${CONFIG_HOME}/lx-music-desktop/.window-size-seeded"
+if [ ! -f "${SEED_MARKER}" ]; then
+    if grep -q '"common.windowSizeId"' "${CONFIG_FILE}"; then
+        sed -i "s/\"common.windowSizeId\"[[:space:]]*:[[:space:]]*[0-9]*/\"common.windowSizeId\": ${WINDOW_SIZE_ID}/" \
+            "${CONFIG_FILE}"
+    else
+        sed -i "s/\"setting\"[[:space:]]*:[[:space:]]*{/\"setting\": {\n\t\t\"common.windowSizeId\": ${WINDOW_SIZE_ID},/" \
+            "${CONFIG_FILE}"
+    fi
+    : > "${SEED_MARKER}"
 fi
 
 # --no-sandbox               容器内没有可用沙箱环境，否则 Electron 直接退出。
