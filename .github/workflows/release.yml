@@ -91,6 +91,8 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+          # buildx 会把构建缓存也作为 artifact 上传，只取 fpk
+          pattern: fpk-*
 
       - name: Checksums
         run: |
