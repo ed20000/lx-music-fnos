@@ -78,7 +78,7 @@ RUN chmod +x /startapp.sh
 
 # 初始化脚本：Openbox 主窗口选择规则、下载目录与数据目录准备
 COPY rootfs/ /
-RUN chmod +x /etc/cont-init.d/30-lxmusic.sh
+RUN chmod +x /etc/cont-init.d/30-lxmusic.sh /etc/cont-init.d/40-novnc-quiet.sh
 
 # 应用身份，noVNC 页面标题会显示
 RUN set-cont-env APP_NAME "LX Music" && \
