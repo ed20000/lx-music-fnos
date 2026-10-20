@@ -22,8 +22,12 @@ services:
       # 的"窗口超出屏幕就降级到 920x600"逻辑打回。
       - DISPLAY_WIDTH=${wizard_display_width:-1600}
       - DISPLAY_HEIGHT=${wizard_display_height:-900}
-      # 声音经容器内 PulseAudio 回传，由浏览器播放
+      # 声音经容器内 PulseAudio 回传，由浏览器播放。
+      # 注意：浏览器的 AudioContext / 剪贴板 API 只在安全上下文可用，
+      # http://<局域网IP> 下会静默失败（控制台报 requires a secure context），
+      # 所以必须配套开启 SECURE_CONNECTION，用 https 访问。
       - WEB_AUDIO=1
+      - SECURE_CONNECTION=1
       - WEB_FILE_MANAGER=0
       - WEB_TERMINAL=0
       - KEEP_APP_RUNNING=1
